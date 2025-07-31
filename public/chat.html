@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>채팅 - CuraPick 큐라픽</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-brand" onclick="goHome()">CuraPick 큐라픽</div>
+            <div class="nav-tabs">
+                <button class="nav-tab" onclick="goHome()">Main</button>
+                <button class="nav-tab active">Chat</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="chat-container">
+        <div class="chat-wrapper">
+            <div class="chat-header">라픽이</div>
+            <div class="chat-messages" id="chat-messages">
+                <div class="message bot-message">
+                    <div class="bot-avatar"></div>
+                    <div class="message-content">
+                        안녕하십니까! 저는 큐라픽의 AI 어시스턴트 라픽이입니다!!<br>
+                        현재 겪고 계신 증상이나 건강 관련 질문이 있으시면 자연스럽게 말씀해주십쇼!
+                    </div>
+                </div>
+            </div>
+            <div class="input-container">
+                <textarea 
+                    id="chat-input" 
+                    placeholder="여기에 증상을 입력하세요..."
+                    rows="3"
+                ></textarea>
+                <button class="send-button" onclick="sendMessage()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="recommendations-section" id="recommendations-section" style="display: none;">
+            <h2>추천 제품</h2>
+            <div class="products-grid" id="chat-products-grid">
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/chat.js"></script>
+</body>
+</html>
