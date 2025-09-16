@@ -420,7 +420,7 @@ body.main-page {
 }
 
 .bot-avatar::after {
-  content: "💊";
+  content: "😎";
   font-size: 1.2rem;
 }
 
