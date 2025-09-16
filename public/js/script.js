@@ -25,10 +25,9 @@ document.addEventListener("DOMContentLoaded", () => {
 })
 
 function scrollToInput() {
-  const inputSection = document.getElementById("input-section")
-  if (inputSection) {
-    inputSection.scrollIntoView({ behavior: "smooth" })
-  }
+  document.getElementById("input-section").scrollIntoView({
+    behavior: "smooth",
+  })
 }
 
 function analyzeSymptoms() {
@@ -46,7 +45,7 @@ function analyzeSymptoms() {
   }
 
   localStorage.setItem("symptoms", symptoms)
-  window.location.href = "results.html"
+  window.location.href = "chat.html"
 }
 
 function goHome() {

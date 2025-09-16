@@ -1,3 +1,6 @@
+const GROQ_API_KEY = process.env.GROQ_API_KEY || ""
+const SERPER_API_KEY = process.env.SERPER_API_KEY || ""
+
 let isAnalyzing = false
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -17,6 +20,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     })
   }
+
+  const symptoms = localStorage.getItem("symptoms")
+  if (symptoms && symptoms.trim().length > 0) {
+    addMessage("user", symptoms)
+    localStorage.removeItem("symptoms")
+    setTimeout(() => {
+      sendMessageWithText(symptoms)
+    }, 500)
+  }
 })
 
 async function sendMessage() {
@@ -35,39 +47,21 @@ async function sendMessage() {
   addMessage("user", message)
   chatInput.value = ""
 
+  await sendMessageWithText(message)
+}
+
+async function sendMessageWithText(message) {
+  if (isAnalyzing) return
+
   isAnalyzing = true
   addTypingIndicator()
 
   try {
-    const analysisResponse = await fetch("/api/analyze", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ symptoms: message }),
-    })
-
-    const analysisResult = await analysisResponse.json()
-
-    if (!analysisResponse.ok) {
-      throw new Error(analysisResult.error || "분석 중 오류가 발생했습니다.")
-    }
-
+    const analysisResult = await analyzeWithGroq(message)
     removeTypingIndicator()
-
     addMessage("bot", analysisResult.fullAnalysis)
 
-    const searchResponse = await fetch("/api/search", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ keywords: analysisResult.keywords }),
-    })
-
-    const searchResult = await searchResponse.json()
-    const products = searchResult.products || []
-
+    const products = await searchProducts(analysisResult.keywords)
     displayProducts(products)
   } catch (error) {
     console.error("분석 중 오류:", error)
@@ -124,32 +118,125 @@ function removeTypingIndicator() {
   }
 }
 
+async function analyzeWithGroq(symptoms) {
+  try {
+    const response = await fetch("/api/analyze", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ symptoms }),
+    })
+
+    if (!response.ok) {
+      throw new Error("API 호출 실패")
+    }
+
+    const data = await response.json()
+
+    if (!data.success) {
+      throw new Error(data.error || "API 응답 오류")
+    }
+
+    return {
+      fullAnalysis: data.analysis,
+      keywords: data.keywords || ["건강보조식품", "영양제", "비타민"],
+    }
+  } catch (error) {
+    console.error("Groq API 오류:", error)
+    return {
+      fullAnalysis: `
+        죄송합니다. 현재 AI 분석 서비스에 일시적인 문제가 발생했습니다.<br><br>
+        일반적인 건강 관리 방법:<br>
+        • 충분한 수면과 휴식<br>
+        • 균형 잡힌 영양 섭취<br>
+        • 적절한 운동<br>
+        • 스트레스 관리<br><br>
+        <strong>⚠️ 중요:</strong> 지속적이거나 심각한 증상의 경우 반드시 전문의와 상담하시기 바랍니다.
+      `,
+      keywords: ["종합비타민", "건강보조식품", "영양제"],
+    }
+  }
+}
+
+async function searchProducts(keywords) {
+  try {
+    const response = await fetch("/api/search", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ keywords }),
+    })
+
+    if (!response.ok) {
+      throw new Error("검색 API 호출 실패")
+    }
+
+    const data = await response.json()
+
+    if (!data.success) {
+      throw new Error(data.error || "검색 API 응답 오류")
+    }
+
+    return data.products || []
+  } catch (error) {
+    console.error("제품 검색 중 오류:", error)
+    return getSampleProducts(keywords[0] || "건강보조식품")
+  }
+}
+
+function getSampleProducts(keyword) {
+  return [
+    {
+      title: `${keyword} 관련 건강보조식품`,
+      description: "현재 실시간 검색 결과를 가져올 수 없어 샘플 정보를 표시합니다.",
+      link: `https://www.coupang.com/np/search?q=${encodeURIComponent(keyword + " 건강보조식품")}`,
+      keyword: keyword,
+      source: "쿠팡",
+      displayedLink: "coupang.com",
+      isPremium: true,
+    },
+  ]
+}
+
 function displayProducts(products) {
   const recommendationsSection = document.getElementById("recommendations-section")
   const productsGrid = document.getElementById("chat-products-grid")
 
   if (products.length > 0) {
     productsGrid.innerHTML = products
-      .map(
-        (product, index) => `
-          <div class="product-card" style="animation-delay: ${index * 0.1}s">
-            <h3 class="product-title">${escapeHtml(product.title)}</h3>
-            <p class="product-description">${escapeHtml(product.description)}</p>
+      .map((product, index) => {
+        const safeProduct = {
+          title: escapeHtml(product.title || "제품명 없음"),
+          description: escapeHtml(product.description || "설명이 없습니다."),
+          link: product.link || "#",
+          keyword: escapeHtml(product.keyword || ""),
+          source: escapeHtml(product.source || "알 수 없음"),
+          displayedLink: escapeHtml(product.displayedLink || ""),
+          isPremium: product.isPremium || false,
+        }
+
+        return `
+          <div class="product-card ${safeProduct.isPremium ? "premium-product" : ""}" style="animation-delay: ${index * 0.1}s">
+            ${safeProduct.isPremium ? '<div class="premium-badge">🏆 프리미엄</div>' : ""}
+            <h3 class="product-title">${safeProduct.title}</h3>
+            <p class="product-description">${safeProduct.description}</p>
             <div class="product-ingredients">
               <h4>🔍 관련 키워드</h4>
-              <p>${escapeHtml(product.keyword)}</p>
+              <p>${safeProduct.keyword}</p>
             </div>
             <div class="product-source">
-              <small><strong>출처:</strong> ${escapeHtml(product.source)}</small><br>
-              <small><strong>도메인:</strong> ${escapeHtml(getHostname(product.link))}</small><br>
-              <small><strong>검색일:</strong> ${new Date().toLocaleDateString("ko-KR")}</small>
+              <small><strong>🛒 판매처:</strong> ${safeProduct.source}</small><br>
+              <small><strong>🌐 도메인:</strong> ${safeProduct.displayedLink}</small><br>
+              <small><strong>📅 검색일:</strong> ${new Date().toLocaleDateString("ko-KR")}</small>
             </div>
-            <a href="${product.link}" target="_blank" rel="noopener noreferrer" class="product-link">
-              자세히 보기 →
+            <a href="${safeProduct.link}" target="_blank" rel="noopener noreferrer" class="product-link ${safeProduct.isPremium ? "premium-link" : ""}">
+              ${safeProduct.isPremium ? "🛒 프리미엄 구매하기 →" : "자세히 보기 →"}
             </a>
           </div>
-        `,
-      )
+        `
+      })
       .join("")
 
     recommendationsSection.style.display = "block"
@@ -169,19 +256,15 @@ function displayProducts(products) {
   }
 }
 
-function getHostname(url) {
-  try {
-    return new URL(url).hostname
-  } catch (error) {
-    return "알 수 없음"
-  }
-}
-
 function goHome() {
   window.location.href = "index.html"
 }
 
 function escapeHtml(text) {
+  if (typeof text !== "string") {
+    return String(text || "")
+  }
+
   const map = {
     "&": "&amp;",
     "<": "&lt;",
