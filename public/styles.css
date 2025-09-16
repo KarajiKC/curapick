@@ -343,7 +343,7 @@ body.main-page {
 }
 
 .chat-header::after {
-  content: "🤖";
+  content: "💊";
   position: absolute;
   right: 1.5rem;
   top: 50%;
@@ -420,7 +420,7 @@ body.main-page {
 }
 
 .bot-avatar::after {
-  content: "🤖";
+  content: "💊";
   font-size: 1.2rem;
 }
 
