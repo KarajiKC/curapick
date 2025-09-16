@@ -12,6 +12,13 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.href = "chat.html"
     })
   }
+
+  const startButton = document.querySelector(".cta-button")
+  if (startButton) {
+    startButton.addEventListener("click", () => {
+      window.location.href = "chat.html"
+    })
+  }
 })
 
 function startChat() {
