@@ -30,6 +30,9 @@ export default async function handler(req, res) {
   }
 
   const targetSites = [
+    "wsmon.co.kr",
+    "iherb.com",
+
     "coupang.com",
     "gmarket.co.kr",
     "11st.co.kr",
@@ -44,7 +47,6 @@ export default async function handler(req, res) {
     "hmall.com",
     "lotteimall.com",
 
-    "iherb.com",
     "vitacost.com",
     "swansonvitamins.com",
 
